@@ -1,0 +1,286 @@
+{
+  "info": {
+    "_postman_id": "0b3f7a1a-7f1a-4e4c-9b6a-2b5d7f9ef001",
+    "name": "AgentCredit AI - Flujo completo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "actorCliente", "value": "cliente" },
+    { "key": "actorAgente", "value": "agente" },
+    { "key": "actorAnalista", "value": "analista" },
+    { "key": "clienteId", "value": "" },
+    { "key": "solicitudId", "value": "" },
+    { "key": "solicitudIdReanalisis", "value": "" },
+    { "key": "creditoId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Flujo principal",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/health"
+          }
+        },
+        {
+          "name": "Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Maria Perez\",\n  \"documentoId\": \"12345678-9\",\n  \"email\": \"maria@correo.com\",\n  \"telefono\": \"7000-0003\",\n  \"ingresosMensuales\": 1500\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/clientes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('clienteId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subir documento (metadata)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"estado_cuenta\",\n  \"nombreArchivo\": \"estado_cuenta_marzo.pdf\",\n  \"url\": \"https://files.example.com/estado_cuenta_marzo.pdf\",\n  \"fechaEmision\": \"2026-05-01\",\n  \"montoDocumento\": 1200\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/clientes/{{clienteId}}/documentos"
+          }
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"monto\": 2500,\n  \"plazoMeses\": 12,\n  \"proposito\": \"capital de trabajo\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/solicitudes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('solicitudId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviar solicitud y disparar analisis",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/enviar?actor={{actorCliente}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.solicitud) {",
+                  "    pm.collectionVariables.set('solicitudId', json.solicitud.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar analisis (ultimo)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/analisis?ultimo=true"
+          }
+        },
+        {
+          "name": "Registrar revision (aprobada)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analista\": \"Laura Gomez\",\n  \"decisionFinal\": \"aprobada\",\n  \"justificacion\": \"Score alto y documentos completos\",\n  \"docsAdicionalesSolicitados\": []\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/revision?actor={{actorAnalista}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.credito) {",
+                  "    pm.collectionVariables.set('creditoId', json.credito.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar credito",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/creditos/{{creditoId}}"
+          }
+        },
+        {
+          "name": "Registrar pago",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 500,\n  \"diasAtraso\": 0\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/creditos/{{creditoId}}/pagos"
+          }
+        },
+        {
+          "name": "Auditoria de solicitud",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/auditoria"
+          }
+        },
+        {
+          "name": "Reporte resumen",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/reportes/resumen"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Flujo reanalisis",
+      "item": [
+        {
+          "name": "Crear solicitud (reanalisis)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"monto\": 8000,\n  \"plazoMeses\": 24,\n  \"proposito\": \"expansion\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/solicitudes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('solicitudIdReanalisis', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviar solicitud (reanalisis)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/enviar?actor={{actorCliente}}"
+          }
+        },
+        {
+          "name": "Solicitar informacion adicional",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docsSolicitados\": [\"constancia ingresos\", \"estado cuenta\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/solicitar-info?actor={{actorAnalista}}"
+          }
+        },
+        {
+          "name": "Actualizar solicitud con info adicional",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"infoAdicional\": \"Se agregaron comprobantes de ingresos\",\n  \"monto\": 7800\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}"
+          }
+        },
+        {
+          "name": "Reanalizar",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/reanalizar?actor={{actorAgente}}"
+          }
+        },
+        {
+          "name": "Registrar revision (rechazada)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analista\": \"Laura Gomez\",\n  \"decisionFinal\": \"rechazada\",\n  \"justificacion\": \"Capacidad de pago insuficiente\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/revision?actor={{actorAnalista}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Utilidades",
+      "item": [
+        {
+          "name": "Listar solicitudes con filtros",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/solicitudes?estado=en%20revision&minMonto=1000&maxMonto=10000"
+          }
+        },
+        {
+          "name": "Listar creditos en mora",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/creditos?estadoMora=en%20mora"
+          }
+        }
+      ]
+    }
+  ]
+}
