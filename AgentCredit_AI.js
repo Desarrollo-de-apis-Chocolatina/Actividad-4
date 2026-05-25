@@ -723,8 +723,153 @@ apiV1.get('/health', (req, res) => {
 	res.json({ status: 'ok', version: 'v1' });
 });
 
+// APIV2
+
 apiV2.get('/status', (req, res) => {
-	res.json({ status: 'stub', version: 'v2', message: 'Version 2 pendiente de implementacion' });
+	res.json({
+		status: 'ok',
+		version: 'v2',
+		message: 'AgentCredit API v2 funcionando'
+	});
+});
+
+const crearAnalisisV2 = (solicitud, cliente) => {
+	const ingresos = esNumero(cliente.ingresosMensuales) ? +cliente.ingresosMensuales : 0;
+	const monto = esNumero(solicitud.monto) ? +solicitud.monto : 0;
+	const plazo = esNumero(solicitud.plazoMeses) ? +solicitud.plazoMeses : 0;
+
+	const documentosVerificados = cliente.documentos.length > 0 ? 5 : 0;
+
+	const reanalisisPrevios = solicitud.id
+		? analisis.filter(a => a.solicitudId === solicitud.id).length
+		: 0;
+
+	const scoreBruto =
+		60 +
+		(ingresos / 1000) * 10 -
+		(monto / 1000) * 6 -
+		(plazo / 12) * 4 +
+		documentosVerificados -
+		(reanalisisPrevios * 3);
+
+	const score = Math.max(0, Math.min(100, Math.round(scoreBruto)));
+
+	const variables = [
+		{ nombre: 'ingresosMensuales', valor: ingresos, peso: 0.45 },
+		{ nombre: 'montoSolicitado', valor: monto, peso: -0.35 },
+		{ nombre: 'plazoMeses', valor: plazo, peso: -0.2 },
+		{ nombre: 'documentosVerificados', valor: documentosVerificados > 0, peso: 0.05 },
+		{ nombre: 'reanalisisPrevios', valor: reanalisisPrevios, peso: -0.03 }
+	];
+
+	const recomendacion = score >= 70
+		? 'aprobar'
+		: (score >= 50 ? 'revisar' : 'rechazar');
+
+	const confianza = Math.max(0.4, Math.min(0.95, score / 100));
+
+	const version = solicitud.id
+		? analisis.filter(a => a.solicitudId === solicitud.id).length + 1
+		: 1;
+
+	return {
+		id: siguienteIdAnalisis++,
+		solicitudId: solicitud.id || null,
+		version,
+		score,
+		variables,
+		recomendacion,
+		confianza,
+		modeloVersion: 'v2.0',
+		creadoEn: new Date()
+	};
+};
+
+apiV2.patch('/solicitudes/:id/estado', (req, res) => {
+	const actor = exigirActor(req, res);
+	if (!actor) return;
+
+	const solicitud = solicitudes.find(s => s.id === +req.params.id);
+	if (!solicitud)
+		return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+	const { estado, detalle = '' } = req.body;
+
+	if (!estado)
+		return res.status(400).json({ error: 'estado es obligatorio' });
+
+	const desde = solicitud.estado;
+
+	const resultado = cambiarEstado(solicitud, estado, actor, detalle);
+
+	if (!resultado.ok) {
+		const permitidos = TRANSICIONES_VALIDAS[solicitud.estado] || [];
+
+		return res.status(resultado.status).json({
+			error: {
+				code: 'INVALID_TRANSITION',
+				message: resultado.error,
+				permitidos
+			}
+		});
+	}
+
+	return res.json({
+		solicitud,
+		cambio: {
+			desde,
+			hasta: estado,
+			actor,
+			fecha: solicitud.actualizadoEn
+		}
+	});
+});
+
+apiV2.post('/clientes/:id/pre-screening', (req, res) => {
+	const cliente = obtenerClientePorId(req.params.id);
+
+	if (!cliente)
+		return res.status(404).json({ error: 'Cliente no encontrado' });
+
+	const { montoDeseado, plazoMeses } = req.body;
+
+	if (montoDeseado == null || plazoMeses == null)
+		return res.status(400).json({
+			error: 'montoDeseado y plazoMeses son obligatorios'
+		});
+
+	if (!esNumero(montoDeseado) || +montoDeseado <= 0)
+		return res.status(400).json({
+			error: 'montoDeseado debe ser numerico y mayor que 0'
+		});
+
+	if (!esNumero(plazoMeses) || +plazoMeses <= 0)
+		return res.status(400).json({
+			error: 'plazoMeses debe ser numerico y mayor que 0'
+		});
+
+	const solicitudTemp = {
+		monto: +montoDeseado,
+		plazoMeses: +plazoMeses
+	};
+
+	const resultado = crearAnalisisV2(solicitudTemp, cliente);
+
+	const montoMaximoRecomendado = Math.max(
+		1000,
+		Math.round((cliente.ingresosMensuales || 0) * 4)
+	);
+
+	return res.json({
+		cliente: {
+			id: cliente.id,
+			nombre: cliente.nombre
+		},
+		score: resultado.score,
+		recomendacion: resultado.recomendacion,
+		montoMaximoRecomendado,
+		aprobadoPreliminar: resultado.score >= 50
+	});
 });
 
 app.use('/api/v1', apiV1);

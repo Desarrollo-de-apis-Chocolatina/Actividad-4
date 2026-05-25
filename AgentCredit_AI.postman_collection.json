@@ -1,19 +1,11 @@
 {
   "info": {
-    "_postman_id": "0b3f7a1a-7f1a-4e4c-9b6a-2b5d7f9ef001",
+    "_postman_id": "399420c2-b5d1-4111-a7bf-d0806050e0d4",
     "name": "AgentCredit AI - Flujo completo",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "46789034",
+    "_collection_link": "https://go.postman.co/collection/46789034-399420c2-b5d1-4111-a7bf-d0806050e0d4?source=collection_link"
   },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "actorCliente", "value": "cliente" },
-    { "key": "actorAgente", "value": "agente" },
-    { "key": "actorAnalista", "value": "analista" },
-    { "key": "clienteId", "value": "" },
-    { "key": "solicitudId", "value": "" },
-    { "key": "solicitudIdReanalisis", "value": "" },
-    { "key": "creditoId", "value": "" }
-  ],
   "item": [
     {
       "name": "Flujo principal",
@@ -22,20 +14,23 @@
           "name": "Health",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/health"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Crear cliente",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Maria Perez\",\n  \"documentoId\": \"12345678-9\",\n  \"email\": \"maria@correo.com\",\n  \"telefono\": \"7000-0003\",\n  \"ingresosMensuales\": 1500\n}"
-            },
-            "url": "{{baseUrl}}/api/v1/clientes"
-          },
           "event": [
             {
               "listen": "test",
@@ -49,31 +44,65 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Maria Perez\",\n  \"documentoId\": \"12345678-9\",\n  \"email\": \"maria@correo.com\",\n  \"telefono\": \"7000-0003\",\n  \"ingresosMensuales\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Subir documento (metadata)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tipo\": \"estado_cuenta\",\n  \"nombreArchivo\": \"estado_cuenta_marzo.pdf\",\n  \"url\": \"https://files.example.com/estado_cuenta_marzo.pdf\",\n  \"fechaEmision\": \"2026-05-01\",\n  \"montoDocumento\": 1200\n}"
             },
-            "url": "{{baseUrl}}/api/v1/clientes/{{clienteId}}/documentos"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/{{clienteId}}/documentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "{{clienteId}}",
+                "documentos"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Crear solicitud",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"monto\": 2500,\n  \"plazoMeses\": 12,\n  \"proposito\": \"capital de trabajo\"\n}"
-            },
-            "url": "{{baseUrl}}/api/v1/solicitudes"
-          },
           "event": [
             {
               "listen": "test",
@@ -87,14 +116,35 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"monto\": 2500,\n  \"plazoMeses\": 12,\n  \"proposito\": \"capital de trabajo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Enviar solicitud y disparar analisis",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/enviar?actor={{actorCliente}}"
-          },
           "event": [
             {
               "listen": "test",
@@ -110,26 +160,61 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/enviar?actor={{actorCliente}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudId}}",
+                "enviar"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorCliente}}"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Consultar analisis (ultimo)",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/analisis?ultimo=true"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/analisis?ultimo=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudId}}",
+                "analisis"
+              ],
+              "query": [
+                {
+                  "key": "ultimo",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Registrar revision (aprobada)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"analista\": \"Laura Gomez\",\n  \"decisionFinal\": \"aprobada\",\n  \"justificacion\": \"Score alto y documentos completos\",\n  \"docsAdicionalesSolicitados\": []\n}"
-            },
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/revision?actor={{actorAnalista}}"
-          },
           "event": [
             {
               "listen": "test",
@@ -145,40 +230,131 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analista\": \"Laura Gomez\",\n  \"decisionFinal\": \"aprobada\",\n  \"justificacion\": \"Score alto y documentos completos\",\n  \"docsAdicionalesSolicitados\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/revision?actor={{actorAnalista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudId}}",
+                "revision"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorAnalista}}"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Consultar credito",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/creditos/{{creditoId}}"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/creditos/{{creditoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "creditos",
+                "{{creditoId}}"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Registrar pago",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"monto\": 500,\n  \"diasAtraso\": 0\n}"
             },
-            "url": "{{baseUrl}}/api/v1/creditos/{{creditoId}}/pagos"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/creditos/{{creditoId}}/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "creditos",
+                "{{creditoId}}",
+                "pagos"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Auditoria de solicitud",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/auditoria"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudId}}/auditoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudId}}",
+                "auditoria"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Reporte resumen",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/reportes/resumen"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reportes/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "resumen"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -187,15 +363,6 @@
       "item": [
         {
           "name": "Crear solicitud (reanalisis)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"monto\": 8000,\n  \"plazoMeses\": 24,\n  \"proposito\": \"expansion\"\n}"
-            },
-            "url": "{{baseUrl}}/api/v1/solicitudes"
-          },
           "event": [
             {
               "listen": "test",
@@ -209,57 +376,187 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"monto\": 8000,\n  \"plazoMeses\": 24,\n  \"proposito\": \"expansion\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Enviar solicitud (reanalisis)",
           "request": {
             "method": "POST",
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/enviar?actor={{actorCliente}}"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/enviar?actor={{actorCliente}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudIdReanalisis}}",
+                "enviar"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorCliente}}"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Solicitar informacion adicional",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"docsSolicitados\": [\"constancia ingresos\", \"estado cuenta\"]\n}"
             },
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/solicitar-info?actor={{actorAnalista}}"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/solicitar-info?actor={{actorAnalista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudIdReanalisis}}",
+                "solicitar-info"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorAnalista}}"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Actualizar solicitud con info adicional",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"infoAdicional\": \"Se agregaron comprobantes de ingresos\",\n  \"monto\": 7800\n}"
             },
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudIdReanalisis}}"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Reanalizar",
           "request": {
             "method": "POST",
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/reanalizar?actor={{actorAgente}}"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/reanalizar?actor={{actorAgente}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudIdReanalisis}}",
+                "reanalizar"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorAgente}}"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Registrar revision (rechazada)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"analista\": \"Laura Gomez\",\n  \"decisionFinal\": \"rechazada\",\n  \"justificacion\": \"Capacidad de pago insuficiente\"\n}"
             },
-            "url": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/revision?actor={{actorAnalista}}"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes/{{solicitudIdReanalisis}}/revision?actor={{actorAnalista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{solicitudIdReanalisis}}",
+                "revision"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorAnalista}}"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -270,17 +567,186 @@
           "name": "Listar solicitudes con filtros",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/solicitudes?estado=en%20revision&minMonto=1000&maxMonto=10000"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/solicitudes?estado=en%20revision&minMonto=1000&maxMonto=10000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "solicitudes"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "en%20revision"
+                },
+                {
+                  "key": "minMonto",
+                  "value": "1000"
+                },
+                {
+                  "key": "maxMonto",
+                  "value": "10000"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Listar creditos en mora",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/creditos?estadoMora=en%20mora"
-          }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/creditos?estadoMora=en%20mora",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "creditos"
+              ],
+              "query": [
+                {
+                  "key": "estadoMora",
+                  "value": "en%20mora"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
+    },
+    {
+      "name": "V2",
+      "item": [
+        {
+          "name": "Status",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar Estado Solicitud",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"rechazada\",\n  \"detalle\": \"Score insuficiente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/solicitudes/{{solicitudId}}/estado?actor=analista",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "solicitudes",
+                "{{solicitudId}}",
+                "estado"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "analista"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pre-Screening Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montoDeseado\": 3000,\n  \"plazoMeses\": 12\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/clientes/{{clienteId}}/pre-screening",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "clientes",
+                "{{clienteId}}",
+                "pre-screening"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "actorCliente",
+      "value": "cliente"
+    },
+    {
+      "key": "actorAgente",
+      "value": "agente"
+    },
+    {
+      "key": "actorAnalista",
+      "value": "analista"
+    },
+    {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "solicitudId",
+      "value": ""
+    },
+    {
+      "key": "solicitudIdReanalisis",
+      "value": ""
+    },
+    {
+      "key": "creditoId",
+      "value": ""
     }
   ]
 }
