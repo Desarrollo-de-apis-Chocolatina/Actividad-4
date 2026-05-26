@@ -733,7 +733,7 @@ apiV2.get('/status', (req, res) => {
 	});
 });
 
-const crearAnalisisV2 = (solicitud, cliente) => {
+const crearAnalisisV2 = (solicitud, cliente, { soloCalculo = false } = {}) => {
 	const ingresos = esNumero(cliente.ingresosMensuales) ? +cliente.ingresosMensuales : 0;
 	const monto = esNumero(solicitud.monto) ? +solicitud.monto : 0;
 	const plazo = esNumero(solicitud.plazoMeses) ? +solicitud.plazoMeses : 0;
@@ -773,7 +773,7 @@ const crearAnalisisV2 = (solicitud, cliente) => {
 		: 1;
 
 	return {
-		id: siguienteIdAnalisis++,
+		id: soloCalculo ? null : siguienteIdAnalisis++,
 		solicitudId: solicitud.id || null,
 		version,
 		score,
@@ -853,7 +853,7 @@ apiV2.post('/clientes/:id/pre-screening', (req, res) => {
 		plazoMeses: +plazoMeses
 	};
 
-	const resultado = crearAnalisisV2(solicitudTemp, cliente);
+	const resultado = crearAnalisisV2(solicitudTemp, cliente, { soloCalculo: true });
 
 	const montoMaximoRecomendado = Math.max(
 		1000,
@@ -869,6 +869,146 @@ apiV2.post('/clientes/:id/pre-screening', (req, res) => {
 		recomendacion: resultado.recomendacion,
 		montoMaximoRecomendado,
 		aprobadoPreliminar: resultado.score >= 50
+	});
+});
+
+
+apiV2.post('/clientes/:id/documentos/subir', (req, res) => {
+	const cliente = obtenerClientePorId(req.params.id);
+	if (!cliente) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+	const { tipo, nombreArchivo, url, fechaEmision = null, montoDocumento = null } = req.body;
+	if (!tipo || !nombreArchivo || !url)
+		return res.status(400).json({ error: 'Los campos tipo, nombreArchivo y url son obligatorios' });
+
+	const documento = {
+		id: siguienteIdDocumento++,
+		tipo,
+		nombreArchivo,
+		url,
+		fechaEmision: fechaEmision ? new Date(fechaEmision) : null,
+		montoDocumento: montoDocumento !== null && esNumero(montoDocumento) ? +montoDocumento : null,
+		registradoEn: new Date()
+	};
+
+	cliente.documentos.push(documento);
+	res.status(201).json(documento);
+});
+
+apiV2.put('/clientes/:id', (req, res) => {
+	const actor = exigirActor(req, res, ['analista', 'cliente']);
+	if (!actor) return;
+
+	const id = +req.params.id;
+	const indice = clientes.findIndex(c => c.id === id);
+	if (indice === -1) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+	if (req.body.documentoId && clientes.some(c => c.id !== id && normalizar(c.documentoId) === normalizar(req.body.documentoId)))
+		return res.status(400).json({ error: 'Ya existe otro cliente con ese documentoId' });
+
+	const actualizado = { ...clientes[indice], ...req.body, id };
+	if (actualizado.ingresosMensuales !== undefined && !esNumero(actualizado.ingresosMensuales))
+		return res.status(400).json({ error: 'ingresosMensuales debe ser numerico' });
+
+	actualizado.ingresosMensuales = esNumero(actualizado.ingresosMensuales) ? +actualizado.ingresosMensuales : 0;
+	clientes[indice] = actualizado;
+	res.json(actualizado);
+});
+
+apiV2.put('/solicitudes/:id', (req, res) => {
+	const actor = exigirActor(req, res, ['cliente']);
+	if (!actor) return;
+
+	const id = +req.params.id;
+	const indice = solicitudes.findIndex(s => s.id === id);
+	if (indice === -1) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+	const solicitud = solicitudes[indice];
+	if (!['borrador', 'info requerida'].includes(solicitud.estado))
+		return res.status(400).json({ error: 'Solo se puede editar una solicitud en borrador o info requerida' });
+
+	const { monto, plazoMeses, proposito, infoAdicional, ...resto } = req.body;
+
+	if (monto !== undefined && (!esNumero(monto) || +monto <= 0))
+		return res.status(400).json({ error: 'monto debe ser numerico y mayor que 0' });
+
+	if (plazoMeses !== undefined && (!esNumero(plazoMeses) || +plazoMeses <= 0))
+		return res.status(400).json({ error: 'plazoMeses debe ser numerico y mayor que 0' });
+
+	const actualizado = { ...solicitud, ...resto };
+	if (monto !== undefined) actualizado.monto = +monto;
+	if (plazoMeses !== undefined) actualizado.plazoMeses = +plazoMeses;
+	if (proposito !== undefined) actualizado.proposito = String(proposito).trim();
+	actualizado.actualizadoEn = new Date();
+
+	if (infoAdicional !== undefined) {
+		const base = Array.isArray(solicitud.infoAdicional) ? solicitud.infoAdicional.slice() : [];
+		const normalizarEntrada = (entrada) => {
+			if (entrada && typeof entrada === 'object' && entrada.detalle) {
+				return {
+					detalle: String(entrada.detalle),
+					registradoEn: entrada.registradoEn ? new Date(entrada.registradoEn) : new Date()
+				};
+			}
+			return { detalle: String(entrada), registradoEn: new Date() };
+		};
+
+		if (Array.isArray(infoAdicional)) {
+			base.push(...infoAdicional.map(normalizarEntrada));
+		} else {
+			base.push(normalizarEntrada(infoAdicional));
+		}
+
+		actualizado.infoAdicional = base;
+	}
+
+	solicitudes[indice] = actualizado;
+	registrarAuditoria({ solicitudId: actualizado.id, actor, accion: 'actualizacion' });
+	res.json(actualizado);
+});
+
+apiV2.get('/solicitudes', (req, res) => {
+	const { q, estado, clienteId, minMonto, maxMonto, minScore, maxScore, desde, hasta } = req.query;
+	let resultados = solicitudes.slice();
+
+	if (estado) resultados = resultados.filter(s => normalizar(s.estado) === normalizar(estado));
+	if (clienteId) resultados = resultados.filter(s => s.clienteId === +clienteId);
+	if (minMonto && esNumero(minMonto)) resultados = resultados.filter(s => +s.monto >= +minMonto);
+	if (maxMonto && esNumero(maxMonto)) resultados = resultados.filter(s => +s.monto <= +maxMonto);
+	if (minScore && esNumero(minScore)) resultados = resultados.filter(s => esNumero(s.scoreRiesgo) && +s.scoreRiesgo >= +minScore);
+	if (maxScore && esNumero(maxScore)) resultados = resultados.filter(s => esNumero(s.scoreRiesgo) && +s.scoreRiesgo <= +maxScore);
+
+	if (desde) {
+		const f = new Date(desde);
+		if (!isNaN(f.getTime())) resultados = resultados.filter(s => new Date(s.creadoEn) >= f);
+	}
+
+	if (hasta) {
+		const f = new Date(hasta);
+		if (!isNaN(f.getTime())) resultados = resultados.filter(s => new Date(s.creadoEn) <= f);
+	}
+
+	if (q) {
+		const qn = normalizar(q);
+		resultados = resultados.filter(s => {
+			const cliente = obtenerClientePorId(s.clienteId);
+			return normalizar(s.proposito).includes(qn) || (cliente && normalizar(cliente.nombre).includes(qn));
+		});
+	}
+
+	const page = Math.max(1, parseInt(req.query.page) || 1);
+	const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 20));
+	const total = resultados.length;
+	const pagina = resultados.slice((page - 1) * limit, page * limit);
+
+	res.json({
+		data: pagina,
+		pagination: {
+			page,
+			limit,
+			total,
+			pages: Math.ceil(total / limit)
+		}
 	});
 });
 

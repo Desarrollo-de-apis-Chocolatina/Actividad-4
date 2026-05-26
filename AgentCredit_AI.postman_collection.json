@@ -630,7 +630,18 @@
           "name": "Status",
           "request": {
             "method": "GET",
-            "header": []
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "status"
+              ]
+            }
           },
           "response": []
         },
@@ -655,7 +666,7 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v2/solicitudes/{{solicitudId}}/estado?actor=analista",
+              "raw": "{{baseUrl}}/api/v2/solicitudes/{{solicitudId}}/estado?actor=agente",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -669,7 +680,7 @@
               "query": [
                 {
                   "key": "actor",
-                  "value": "analista"
+                  "value": "agente"
                 }
               ]
             }
@@ -707,6 +718,154 @@
                 "clientes",
                 "{{clienteId}}",
                 "pre-screening"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Subir documento (URL explicita)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"estado_cuenta\",\n  \"nombreArchivo\": \"estado_cuenta_abril.pdf\",\n  \"url\": \"https://files.example.com/estado_cuenta_abril.pdf\",\n  \"fechaEmision\": \"2026-04-30\",\n  \"montoDocumento\": 1500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/clientes/{{clienteId}}/documentos/subir",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "clientes",
+                "{{clienteId}}",
+                "documentos",
+                "subir"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Editar cliente (actor obligatorio)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo@correo.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/clientes/{{clienteId}}?actor={{actorAnalista}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "clientes",
+                "{{clienteId}}"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorAnalista}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Editar solicitud (actor obligatorio)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 2700,\n  \"proposito\": \"capital de trabajo (ajustado)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/solicitudes/{{solicitudId}}?actor={{actorCliente}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "solicitudes",
+                "{{solicitudId}}"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{actorCliente}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar solicitudes paginadas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/solicitudes?page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "solicitudes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
               ]
             }
           },
